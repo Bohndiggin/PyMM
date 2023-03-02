@@ -4,6 +4,12 @@ from tkinter import filedialog
 
 from utils import *
 
+nodes_out_of_tree = [
+    Node('', 'First Node', 'This is the first Node'),
+    Node('First Node', 'First Node Child', 'This ia a child of Node1'),
+    Node('', 'Second Node', 'This is another Root node')    
+    ]
+
 class MainWindow:
     def __init__(self, root) -> None:
         self.root = root
@@ -31,34 +37,30 @@ class MainWindow:
         menu_edit.add_command(label="redo", command=self.placeholder_command)
         menu_edit.add_command(label="undo", command=self.placeholder_command)
 
-        # Tree Viewer
+        # Tree Viewer .insert(PARENT, LOCATION/INDEX, NAME, text=DISPLAY_TEXT)
 
-        self.tree_frame = Frame(self.main_frame, width=400, height=200)
-        self.tree_frame.pack(expand=True, fill=BOTH)
-        self.tree_canvas = Canvas(self.tree_frame, width=400, height=200)
-        self.tree_inner_frame = Frame(self.tree_canvas)
-        self.tree_canvas.create_window((0,0), window=self.tree_inner_frame, anchor=NW)
-        self.tc_hbar = Scrollbar(self.tree_frame, orient=HORIZONTAL, command=self.tree_canvas.xview)
-        self.tc_hbar.pack(side=BOTTOM, fill=X)
-        self.tree_canvas.configure(xscrollcommand=self.tc_hbar.set, scrollregion=(0,0,1200,200))
-        self.tree_w = 1200
-        self.tree_h = 200
-        self.tree_canvas.config(width=400, height=200)
-        self.tree_canvas.pack(side=TOP, fill=BOTH, expand=True)
-        
-        # Tree itself
+        self.tree = ttk.Treeview(self.main_frame, columns=('desc', 'tags'))
+        self.tree.column('desc', width=100, anchor='center')
+        self.tree.column('tags', width=100, anchor='center')
+        self.tree.heading('desc', text='Description')
+        self.tree.heading('tags', text='Tags')
+        self.tree.pack(side=TOP, fill='both', expand=True)
+        self.tree.insert('', 'end', 'name', text="UH")
+        self.tree.insert('', 0, 'Other Name', text="Something Else")
+        self.tree.set('Other Name', 'desc', 'klsdjlkajsdflkjkljsdlkfajkldfjlkjasdklfj')
+        # Treeview chooses the id:
+        self.id = self.tree.insert('', 'end', text='Tutorial')
 
-        self.listboxes = []
-        self.listbox_1_choices = ["alphabet", "numbers"]
-        self.listbox_1_choices_var = StringVar(value=self.listbox_1_choices)
-        self.listbox_1 = Listbox(self.tree_inner_frame, listvariable=self.listbox_1_choices_var)
-        self.listbox_1.pack(side=RIGHT)
-        self.listboxes.append(self.listbox_1)
+        # Inserted underneath an existing node:
+        self.tree.insert('Other Name', 'end', text='Canvas')
+        self.tree.insert(self.id, 'end', 'tree', text='Tree')
 
-        # Button to test
+        self.tree.insert('tree', 0, 'newboi1', text='newboi1')
+        self.tree.insert('tree', 1, 'newboi2', text='newboi2')
 
-        self.test_btn = ttk.Button(self.main_frame, text="test", command=self.widen_tree)
-        self.test_btn.pack()
+        self.tree.bind('<<TreeviewSelect>>', self.tree_select)
+
+        node_list_to_tree(nodes_out_of_tree, self.tree)
 
         # Lower section Frame
 
@@ -83,8 +85,8 @@ class MainWindow:
 
         self.desc_frame = LabelFrame(self.lower_frame, text="Description")
         self.desc_frame.pack(side=RIGHT)
-        self.desc_entry = Text(self.desc_frame, width=40, height=10)
-        self.desc_entry.pack()
+        self.desc_text_box = Text(self.desc_frame, width=40, height=10)
+        self.desc_text_box.pack()
 
 
 
@@ -94,3 +96,17 @@ class MainWindow:
     def widen_tree(self):
         self.tree_w += 200
         self.tree_canvas.configure(scrollregion=(0,0,self.tree_w,300))
+    
+    def tree_select(self, event):
+        selected = self.tree.selection()[0]
+        print("You selected, " +  selected)
+        info = self.tree.item(selected)
+        content = info['text']
+        print(info)
+        self.disp_title.set(content)
+        try:
+            desc_of_selected = info['values'][0]
+        except:
+            desc_of_selected = info['values']
+        self.desc_text_box.delete('1.0', 'end')
+        self.desc_text_box.insert('1.0', desc_of_selected)
