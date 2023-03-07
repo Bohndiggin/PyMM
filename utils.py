@@ -1,18 +1,13 @@
 import pandas as pd
 
-
-def node_to_tree(node, tree):
-    tree.insert(node.parent, 'end', node.title, text=node.desc)
-    tree.set(node.title, 'desc', node.desc)
-
-
 class Node:
-    def __init__(self, parent, title="", desc="", children=[]) -> None:
+    def __init__(self, parent, title="", desc="", children=[], node_id=0) -> None:
         self.parent = parent
         self.title = title
         self.desc = desc
         self.tags = []
         self.children = children
+        self.node_id = node_id
 
     def edit_desc(self, new_desc):
         self.desc = new_desc
@@ -32,7 +27,14 @@ class Tag:
     def __repr__(self) -> str:
         return f'{self.title}, a Tag'
     
+def node_to_tree(node, tree):
+    tree.insert(node.parent, 'end', node.node_id, text=node.desc)
+    tree.set(node.node_id, 'desc', node.desc)
+    tree.set(node.node_id, 'id', node.node_id)
 
 def node_list_to_tree(list_of_nodes, tree):
     for i in list_of_nodes:
         node_to_tree(i, tree=tree)
+
+def tree_to_node(node_id):
+    pass
