@@ -8,7 +8,6 @@ v_num = 0.001
 root = Tk()
 root.title(f"PyMM {v_num}")
 root.minsize(900, 700)
-root.maxsize(900, 1080)
 root.columnconfigure(0, weight=1)
 root.rowconfigure(0, weight=1)
 

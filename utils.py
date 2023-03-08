@@ -18,8 +18,11 @@ class Node:
     def add_tags(self, new_tag):
         self.tags.append(Tag(new_tag))
 
+    def get_parent_id(self):
+        pass
+
     def __repr__(self) -> str:
-        return f'{self.title} is a Node.'
+        return f'{self.title} is a Node with the description: {self.desc}, its parent is {self.parent}'
     
 class Tag:
     def __init__(self, title) -> None:
@@ -28,7 +31,7 @@ class Tag:
         return f'{self.title}, a Tag'
     
 def node_to_tree(node, tree):
-    tree.insert(node.parent, 'end', node.node_id, text=node.desc)
+    tree.insert(node.parent, 'end', node.node_id, text=node.title)
     tree.set(node.node_id, 'desc', node.desc)
     tree.set(node.node_id, 'id', node.node_id)
 
