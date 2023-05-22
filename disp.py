@@ -4,11 +4,11 @@ from tkinter import filedialog
 
 from utils import *
 
-nodes_out_of_tree = [
-    Node('', 'ROOT', 'This is the Root Node', node_id=0),
-    Node(0, 'First Node Child', 'This ia a child of Node1', node_id=1),
-    Node(0, 'Second Node', 'This is NOT another Root node', node_id=2)    
-    ]
+# root_node = Node('', 'ROOT', 'This is the Root Node', node_id=0)
+# home_node = Node(root_node, 'HOME', 'This is Home', node_id=1)
+
+# nodes_out_of_tree = [root_node]
+
 
 class MainWindow:
     def __init__(self, root) -> None:
@@ -29,9 +29,9 @@ class MainWindow:
         # menubar.add_cascade(menu=menu_edit, label='Edit')
         menubar.add_cascade(menu=menu_edit, label='Edit')
 
-        menu_file.add_command(label="Open", command=self.placeholder_command)
-        menu_file.add_command(label="Save", command=self.placeholder_command)
-        menu_file.add_command(label="Save As...", command=self.placeholder_command)
+        menu_file.add_command(label="Open", command=self.load_data)
+        menu_file.add_command(label="Save", command=self.save_window)
+        menu_file.add_command(label="Save As JSON", command=self.save_as_json_window)
         menu_file.add_command(label="Search", command=self.placeholder_command)
 
         menu_edit.add_command(label="undo", command=self.placeholder_command)
@@ -60,15 +60,25 @@ class MainWindow:
 
         self.tree.bind('<<TreeviewSelect>>', self.tree_select)
 
-        node_list_to_tree(nodes_out_of_tree, self.tree)
+        self.backend_node_tree = NodeTree('treename', tk_tree=self.tree)
+        self.backend_node_tree.add_node_to_tree(self.backend_node_tree.nodes[1], 'Test', 'Tesging', self.tree)
+        # save_to_json(self.backend_node_tree)
+        # print(load_from_json('save.json'))
+        # print(load_from_pickle('save.pkl'))
+        # save_to_pickle(self.backend_node_tree)
+        
+        print('WORKED')
+        # node_list_to_tree(nodes_out_of_tree, self.tree)
 
         # Lower section Frame
 
         self.lower_frame = Frame(self.main_frame)
         self.lower_frame.pack(side=BOTTOM)
 
-        self.add_node_btn = ttk.Button(self.lower_frame, command=self.add_node, text='Add Node')
-        self.add_node_btn.pack(side=BOTTOM)
+        # self.add_node_btn = ttk.Button(self.lower_frame, command=self.add_node, text='Add Node')
+        # self.add_node_btn.pack(side=BOTTOM)
+        self.add_child_node_btn = ttk.Button(self.lower_frame, command=self.add_child_node, text='Add Child Node')
+        self.add_child_node_btn.pack(side=BOTTOM)
         self.tree_edit_btn = ttk.Button(self.lower_frame, command=self.edit_mode, text='Edit Tree')
         self.tree_edit_btn.pack(side=BOTTOM)
         
@@ -106,10 +116,6 @@ class MainWindow:
     def placeholder_command(self):
         pass
 
-    def widen_tree(self):
-        self.tree_w += 200
-        self.tree_canvas.configure(scrollregion=(0,0,self.tree_w,300))
-    
     def tree_select(self, event):
         if self.prev_selected_id:
             self.edit_node(self.prev_selected_id)
@@ -131,24 +137,27 @@ class MainWindow:
             self.move_nodes(event=event)
         return "break"
 
-    def add_node(self):
+    def add_child_node(self):
         try:
-            selected = self.tree.selection()[0]
+            selected = self.tree_to_node()
         except:
             selected = ''
-        nodes_out_of_tree.append(Node(selected, 'node '+ str(len(nodes_out_of_tree)), 'Description', node_id=len(nodes_out_of_tree)))
-        node_to_tree(nodes_out_of_tree[-1], self.tree)
+        print(selected)
+        title_of_node = 'node ' + str(len(self.backend_node_tree.nodes))
+        self.backend_node_tree.add_node_to_tree(selected, title_of_node, 'DEFAULT', self.tree)
+        print(self.backend_node_tree.nodes[-1].parent)
+        
 
     def edit_node(self, prev_selected_id):
-        print(nodes_out_of_tree[prev_selected_id])
+        # print(nodes_out_of_tree[prev_selected_id])
         new_desc = self.desc_text_box.get(1.0, 'end-1c')
-        selected_node = nodes_out_of_tree[prev_selected_id]
+        selected_node = self.backend_node_tree.nodes[prev_selected_id]
         selected_node.edit_desc(new_desc)
         self.tree.set(prev_selected_id, 'desc', new_desc)
         new_title = self.title_tags_title_var.get()
         selected_node.edit_title(new_title)
         self.tree.item(prev_selected_id, text=new_title)
-        print(nodes_out_of_tree[prev_selected_id])
+        print(self.backend_node_tree.nodes[prev_selected_id])
     
     def edit_mode(self):
         if self.edit_mode_var:
@@ -163,12 +172,85 @@ class MainWindow:
         selected = self.tree.selection()[0]
         selected_info = self.tree.item(selected)
         selected_id = selected_info['values'][-1]
-        selected_node = nodes_out_of_tree[selected_id]
-        selected_node_parent = int(selected_node.parent)
-        parent_id = nodes_out_of_tree[selected_node_parent].parent
+        selected_node = self.backend_node_tree.nodes[selected_id]
+        # selected_node_parent = int(selected_node.parent)
+        parent_id = self.find_parent(selected)
         # parent_parent_id = nodes_out_of_tree[parent_id].parent
-        selected_node.parent = parent_id
+        selected_node.parent = int(parent_id.node_id)
         self.tree.move(selected_id, parent_id, 'end')
+
+    def move_node_up_level_two(self):
+        selected_node = self.tree_to_node()
+        selected_grand_parent = self.find_parent(selected=selected_node.node_id)
+        self.tree.move(selected_node.node_id, selected_grand_parent, 'end')
         
     def move_node_down_level(self):
         pass
+
+    # def add_node(self):
+    #     try:
+    #         selected = self.tree.selection()[0]
+    #     except:
+    #         selected = ''
+    #     parent_id = int(self.find_parent(selected=selected))
+    #     parent = nodes_out_of_tree[parent_id]
+    #     nodes_out_of_tree.append(Node(parent, 'node '+ str(len(nodes_out_of_tree)), 'Description', node_id=len(nodes_out_of_tree)))
+    #     node_to_tree(nodes_out_of_tree[-1], self.tree)
+
+    def find_parent(self, selected):
+        selected_info = self.tree.item(selected)
+        selected_id = selected_info['values'][-1]
+        selected_node = self.backend_node_tree.nodes[selected_id]
+        # print('+++' , selected_node)
+        selected_node_parent = int(selected_node.parent.node_id)
+        # print('+=+=+', selected_node_parent)
+        parent_id = self.backend_node_tree.nodes[selected_node_parent].parent
+        # print(parent_id)
+        return parent_id
+    
+    def tree_to_node(self):
+        selected = self.tree.selection()[0]
+        selected_info = self.tree.item(selected)
+        selected_id = selected_info['values'][-1]
+        selected_node = self.backend_node_tree.nodes[selected_id]
+        return selected_node
+    
+    def redraw_tree(self): #Function to draw tree from scratch
+        self.tree.delete(0)
+        self.backend_node_tree.node_list_to_tree(self.tree)
+
+    def delete_node(self):
+        selected_node = self.tree_to_node()
+
+    def load_data(self, **kwargs):
+        file_name = kwargs.get('filename', None)
+        if file_name:
+            try:
+                self.backend_node_tree = load_from_pickle(file_name)
+                print('Loaded!')
+            except:
+                temporary_var = load_from_json(file_name, self.tree)
+                print(temporary_var)
+        else:
+            file_name = filedialog.askopenfilename(initialfile='save.pkl', defaultextension='.pkl', filetypes=[("All Files","*.*"),("Pickle","*.pkl")])
+            try:
+                self.backend_node_tree = load_from_pickle(file_name)
+                print('Loaded with prompt!')
+            except:
+                self.backend_node_tree = load_from_json(file_name, tk_tree=self.tree)
+                # print(temporary_var)
+                # print(json.loads(temporary_var, object_hook=lambda x: json_decoder_hook(x, self.tree)))
+                print(self.backend_node_tree)
+        self.redraw_tree()
+
+    def save_window(self):
+        filename = filedialog.asksaveasfilename(initialfile='save.pkl', defaultextension=".pkl",filetypes=[("All Files","*.*"),("Pickle","*.pkl")])
+        save_to_pickle(self.backend_node_tree, filename=filename)
+        print('Saved!')
+        self.load_data(filename=filename)
+    
+    def save_as_json_window(self):
+        filename = filedialog.asksaveasfilename(initialfile='save.json', defaultextension=".json",filetypes=[("All Files","*.*"),("JSON","*.json")])
+        save_to_json(self.backend_node_tree, filename=filename)
+        print('Exported!')
+        self.load_data(filename=filename)
